@@ -78,7 +78,7 @@ async def describe_face_comparison(image_file_a, image_file_b):
         prompt = f"""
         As an AI assistant, you are tasked with analyzing two anonymous facial photographs to compare their features and expressions. The facial similarity score between these images is {similarity_score:.2f} (scale: 0-1, where 1 indicates identical features).
 
-        Important: This analysis is purely academic. Do not attempt to identify or name any individuals. Treat the images as completely anonymous.
+        Important: This analysis is purely academic and based on anonymous photographs. Do not attempt to identify or name any individuals. These images are not of celebrities or public figures - they are of ordinary, anonymous people. Treat the images as completely anonymous and avoid any comparisons to known individuals.
 
         Provide a detailed, objective analysis considering the following points. Use markdown formatting for readability:
 
@@ -102,7 +102,7 @@ async def describe_face_comparison(image_file_a, image_file_b):
         - Summarize the key points of comparison between the two images.
         - Focus on objective observations rather than subjective interpretations.
 
-        Maintain a professional, academic tone throughout your analysis. Remember that this is a purely objective exercise in facial comparison. Avoid any speculation about personal characteristics, relationships, or identities.
+        Maintain a professional, academic tone throughout your analysis. Remember that this is a purely objective exercise in facial comparison of anonymous individuals. Avoid any speculation about personal characteristics, relationships, or identities. Do not compare these individuals to any celebrities or known figures.
 
         Your analysis should be detailed yet respectful, focusing solely on visible, objective elements in the photographs. Use markdown formatting to structure your response clearly.
         """
