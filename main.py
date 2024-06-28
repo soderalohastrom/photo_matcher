@@ -1,6 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-from deepface import DeepFace
 import numpy as np
 from PIL import Image
 import anthropic
@@ -8,6 +7,9 @@ import os
 from base64 import b64encode
 import io
 import uvicorn
+import cv2
+import face_recognition_models
+import pkg_resources
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -24,17 +26,32 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = anthropic.Anthropic(api_key=api_key)
 
+def load_image_file(file, mode='RGB'):
+    im = Image.open(file)
+    if mode:
+        im = im.convert(mode)
+    return np.array(im)
+
+def face_encodings(face_image, known_face_locations=None, num_jitters=1):
+    face_locations = known_face_locations or _raw_face_locations(face_image)
+    pose_predictor = pose_predictor_68_point
+    landmarks = [pose_predictor(face_image, _rect_to_css(face_location)) for face_location in face_locations]
+    return [np.array(face_encoder.compute_face_descriptor(face_image, raw_landmark_set, num_jitters)) for raw_landmark_set in landmarks]
+
+def _raw_face_locations(img, number_of_times_to_upsample=1):
+    return cnn_face_detector(img, number_of_times_to_upsample)
+
 def compare_faces(image_file_a, image_file_b):
     try:
-        img_a = Image.open(image_file_a).convert('RGB')
-        img_b = Image.open(image_file_b).convert('RGB')
+        img_a = load_image_file(image_file_a)
+        img_b = load_image_file(image_file_b)
         
-        result = DeepFace.verify(img1_path=np.array(img_a), 
-                                 img2_path=np.array(img_b), 
-                                 model_name='VGG-Face', 
-                                 enforce_detection=False)
-        
-        similarity_score = 1 - result['distance']
+        encoding_a = face_encodings(img_a)[0]
+        encoding_b = face_encodings(img_b)[0]
+
+        distance = np.linalg.norm(encoding_a - encoding_b)
+        similarity_score = 1 - (distance / 2)  # Normalize to 0-1 range
+
         return max(0, min(1, similarity_score))
     except Exception as e:
         print(f"Error in compare_faces: {e}")
@@ -126,7 +143,7 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
     try:
         # Create temporary in-memory file-like objects
         image1_file = io.BytesIO(await image1.read())
-        image2_file = io.BytesIO(await image2.read())
+        image2_file = .BytesIO(await image2.read())
         
         result = await describe_face_comparison(image1_file, image2_file)
         return JSONResponse(content=result)
@@ -137,3 +154,12 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Load face recognition models
+predictor_68_point_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/shape_predictor_68_face_landmarks.dat")
+face_recognition_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/dlib_face_recognition_resnet_model_v1.dat")
+cnn_face_detection_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/mmod_human_face_detector.dat")
+
+pose_predictor_68_point = dlib.shape_predictor(predictor_68_point_model)
+face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
+cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
