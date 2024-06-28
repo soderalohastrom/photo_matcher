@@ -8,8 +8,7 @@ from base64 import b64encode
 import io
 import uvicorn
 import cv2
-import face_recognition_models
-import pkg_resources
+from skimage.metrics import structural_similarity as ssim
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -26,32 +25,37 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = anthropic.Anthropic(api_key=api_key)
 
-def load_image_file(file, mode='RGB'):
-    im = Image.open(file)
-    if mode:
-        im = im.convert(mode)
-    return np.array(im)
+def load_image_file(file):
+    image = Image.open(file).convert('RGB')
+    return np.array(image)
 
-def face_encodings(face_image, known_face_locations=None, num_jitters=1):
-    face_locations = known_face_locations or _raw_face_locations(face_image)
-    pose_predictor = pose_predictor_68_point
-    landmarks = [pose_predictor(face_image, _rect_to_css(face_location)) for face_location in face_locations]
-    return [np.array(face_encoder.compute_face_descriptor(face_image, raw_landmark_set, num_jitters)) for raw_landmark_set in landmarks]
-
-def _raw_face_locations(img, number_of_times_to_upsample=1):
-    return cnn_face_detector(img, number_of_times_to_upsample)
+def detect_face(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    if len(faces) == 0:
+        return None
+    (x, y, w, h) = faces[0]
+    return image[y:y+h, x:x+w]
 
 def compare_faces(image_file_a, image_file_b):
     try:
         img_a = load_image_file(image_file_a)
         img_b = load_image_file(image_file_b)
         
-        encoding_a = face_encodings(img_a)[0]
-        encoding_b = face_encodings(img_b)[0]
-
-        distance = np.linalg.norm(encoding_a - encoding_b)
-        similarity_score = 1 - (distance / 2)  # Normalize to 0-1 range
-
+        face_a = detect_face(img_a)
+        face_b = detect_face(img_b)
+        
+        if face_a is None or face_b is None:
+            return None
+        
+        face_a_gray = cv2.cvtColor(face_a, cv2.COLOR_RGB2GRAY)
+        face_b_gray = cv2.cvtColor(face_b, cv2.COLOR_RGB2GRAY)
+        
+        face_a_resized = cv2.resize(face_a_gray, (100, 100))
+        face_b_resized = cv2.resize(face_b_gray, (100, 100))
+        
+        similarity_score = ssim(face_a_resized, face_b_resized)
         return max(0, min(1, similarity_score))
     except Exception as e:
         print(f"Error in compare_faces: {e}")
@@ -89,7 +93,6 @@ async def describe_face_comparison(image_file_a, image_file_b):
         4. Age and Lifestyle Indicators: Estimate approximate ages for John and Jane, and note any visible lifestyle indicators (e.g., grooming, style choices visible in the images).
         5. Potential Compatibility Insights: Based on facial similarity research and the given score, suggest potential areas of compatibility or challenges for John and Jane. Remember, while similarity often indicates compatibility, unique combinations can also create intriguing matches.
         6. Aesthetic Appeal as a Couple: Comment on how visually harmonious John and Jane might appear together.
-
         Provide your analysis in a professional, sensitive manner. Avoid making absolute statements about compatibility, as facial similarity is just one factor in a complex matchmaking process. Aim for a balanced perspective that highlights potential positives while noting areas that might require further consideration.
 
         Begin your analysis immediately without any disclaimers about image analysis or individual identification. Focus solely on the compatibility assessment between John Doe and Jane Doe based on their facial features and the provided similarity score.
@@ -153,13 +156,4 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-# Load face recognition models
-predictor_68_point_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/shape_predictor_68_face_landmarks.dat")
-face_recognition_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/dlib_face_recognition_resnet_model_v1.dat")
-cnn_face_detection_model = pkg_resources.resource_filename(__name__, "face_recognition_models/models/mmod_human_face_detector.dat")
-
-pose_predictor_68_point = dlib.shape_predictor(predictor_68_point_model)
-face_encoder = dlib.face_recognition_model_v1(face_recognition_model)
-cnn_face_detector = dlib.cnn_face_detection_model_v1(cnn_face_detection_model)
+    uvicorn.run(app, host="0.0.0.0", port=9000)
