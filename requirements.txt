@@ -5,5 +5,6 @@ numpy==1.26.0
 Pillow==10.0.1
 anthropic==0.30.0
 python-dotenv
+face_recognition
 opencv-python-headless==4.5.5.64
 scikit-image==0.19.3
