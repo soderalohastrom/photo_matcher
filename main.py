@@ -75,29 +75,36 @@ async def describe_face_comparison(image_file_a, image_file_b):
         base64_image_a = encode_image(image_file_a)
         base64_image_b = encode_image(image_file_b)
 
-        # Construct the prompt with images
         prompt = f"""
-        As an AI assistant for a high-end matchmaking company, analyze two facial images and provide insights relevant to potential compatibility. The facial similarity score between these two individuals is {similarity_score:.2f} (on a scale from 0 to 1, where 1 indicates identical faces).
+        As an AI assistant for a confidential matchmaking service, you are tasked with analyzing facial features in photographs to assess potential compatibility. This analysis is based on a facial similarity score and other visible cues, without identifying specific individuals. The facial similarity score provided is {similarity_score:.2f} (scale: 0-1, where 1 indicates identical features).
 
-        Provide a detailed analysis considering the following points. Use markdown formatting for better readability, and start each point on a new line:
+        Important: This analysis is purely for matchmaking purposes and does not involve identifying or commenting on specific individuals. Treat the images as anonymous representations.
 
-        1. **Overall Facial Harmony:** Describe how well the faces complement each other visually.
+        Provide a detailed, professional analysis considering the following points. Use markdown formatting for readability:
 
-        2. **Specific Facial Features:** Compare and contrast key features such as eyes, nose, mouth, and facial structure. Note any striking similarities or differences.
+        1. **Interpretation of Facial Similarity Score:**
+        - Explain what the score of {similarity_score:.2f} might indicate in terms of potential compatibility.
+        - Briefly mention any relevant research on how facial similarity relates to attraction or relationship dynamics.
 
-        3. **Expressions and Perceived Personality:** Infer potential personality traits or emotional states based on facial expressions and features. Consider how these might align or create interesting dynamics.
+        2. **Age Compatibility Assessment:**
+        - Provide a general age range estimate for each photo.
+        - Discuss potential compatibility factors related to the estimated ages.
 
-        4. **Age and Lifestyle Indicators:** Estimate approximate ages and note any visible lifestyle indicators (e.g., grooming, style choices visible in the images).
+        3. **Lifestyle and Interest Indicators:**
+        - Note any visible cues that might suggest shared interests or lifestyles (e.g., style of dress, grooming, accessories).
+        - Analyze how these factors could contribute to compatibility.
 
-        5. **Potential Compatibility Insights:** Based on facial similarity research and the given score, suggest potential areas of compatibility or challenges. Remember, while similarity often indicates compatibility, unique combinations can also create intriguing matches.
+        4. **Facial Expression and Personality Insights:**
+        - Describe the general facial expressions visible in the photos.
+        - Infer potential personality traits based on these expressions and how they might interact in a relationship context.
 
-        6. **Aesthetic Appeal as a Couple:** Comment on how visually harmonious the individuals might appear together.
+        5. **Overall Compatibility Potential:**
+        - Synthesize the above factors to provide an assessment of overall compatibility potential.
+        - Highlight areas that suggest good compatibility and areas that might require further exploration.
 
-        Provide your analysis in a professional, sensitive manner. Avoid making absolute statements about compatibility, as facial similarity is just one factor in a complex matchmaking process. Aim for a balanced perspective that highlights potential positives while noting areas that might require further consideration.
+        Maintain a professional, ethical tone throughout your analysis. Remember that facial features and expressions are just one aspect of compatibility. Focus on potential and possibilities rather than definitive conclusions.
 
-        Begin your analysis immediately without any disclaimers about image analysis or individual identification. Focus solely on the compatibility assessment based on the facial features and the provided similarity score.
-
-        Format your response in markdown, using appropriate headers, bullet points, or numbered lists for clarity and readability.
+        Your analysis should be detailed yet respectful, avoiding any comments that could be construed as judgmental or overly personal. Use markdown formatting to structure your response clearly.
         """
 
         # Send the prompt to Claude
