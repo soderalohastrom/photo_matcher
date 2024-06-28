@@ -65,6 +65,21 @@ def encode_image(image_file):
 # Create an instance of the Anthropic client
 client = Anthropic(api_key=api_key)
 
+from fastapi import FastAPI, File, UploadFile, HTTPException
+
+app = FastAPI()
+
+@app.post("/faces")
+async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
+    try:
+        # Your existing code here
+        result = await describe_face_comparison(image1.file, image2.file)
+        return JSONResponse(content=result)
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
 async def describe_face_comparison(image_file_a, image_file_b):
     similarity_score = compare_faces(image_file_a, image_file_b)
 
