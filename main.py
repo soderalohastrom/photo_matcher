@@ -143,7 +143,7 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
     try:
         # Create temporary in-memory file-like objects
         image1_file = io.BytesIO(await image1.read())
-        image2_file = .BytesIO(await image2.read())
+        image2_file = io.BytesIO(await image2.read())
         
         result = await describe_face_comparison(image1_file, image2_file)
         return JSONResponse(content=result)
