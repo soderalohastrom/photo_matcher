@@ -77,22 +77,27 @@ async def describe_face_comparison(image_file_a, image_file_b):
 
         # Construct the prompt with images
         prompt = f"""
-        As an AI assistant for a high-end matchmaking company, your task is to analyze two facial images of anonymous individuals (referred to as John Doe and Jane Doe) and provide insights relevant to potential compatibility. The facial similarity score between these two individuals is {similarity_score:.2f} (on a scale from 0 to 1, where 1 indicates identical faces).
+        As an AI assistant for a high-end matchmaking company, analyze two facial images and provide insights relevant to potential compatibility. The facial similarity score between these two individuals is {similarity_score:.2f} (on a scale from 0 to 1, where 1 indicates identical faces).
 
-        Important: These individuals are completely anonymous. Do not attempt to identify them. Treat them as generic representations of potential matches, referred to only as John Doe and Jane Doe.
+        Provide a detailed analysis considering the following points. Use markdown formatting for better readability, and start each point on a new line:
 
-        Please provide an immediate, detailed analysis considering the following:
+        1. **Overall Facial Harmony:** Describe how well the faces complement each other visually.
 
-        1. Overall Facial Harmony: Describe how well John and Jane's faces complement each other visually.
-        2. Specific Facial Features: Compare and contrast key features of John and Jane, such as eyes, nose, mouth, and facial structure. Note any striking similarities or differences.
-        3. Expressions and Perceived Personality: Infer potential personality traits or emotional states for John and Jane based on their facial expressions and features. Consider how these might align or create interesting dynamics.
-        4. Age and Lifestyle Indicators: Estimate approximate ages for John and Jane, and note any visible lifestyle indicators (e.g., grooming, style choices visible in the images).
-        5. Potential Compatibility Insights: Based on facial similarity research and the given score, suggest potential areas of compatibility or challenges for John and Jane. Remember, while similarity often indicates compatibility, unique combinations can also create intriguing matches.
-        6. Aesthetic Appeal as a Couple: Comment on how visually harmonious John and Jane might appear together.
+        2. **Specific Facial Features:** Compare and contrast key features such as eyes, nose, mouth, and facial structure. Note any striking similarities or differences.
+
+        3. **Expressions and Perceived Personality:** Infer potential personality traits or emotional states based on facial expressions and features. Consider how these might align or create interesting dynamics.
+
+        4. **Age and Lifestyle Indicators:** Estimate approximate ages and note any visible lifestyle indicators (e.g., grooming, style choices visible in the images).
+
+        5. **Potential Compatibility Insights:** Based on facial similarity research and the given score, suggest potential areas of compatibility or challenges. Remember, while similarity often indicates compatibility, unique combinations can also create intriguing matches.
+
+        6. **Aesthetic Appeal as a Couple:** Comment on how visually harmonious the individuals might appear together.
 
         Provide your analysis in a professional, sensitive manner. Avoid making absolute statements about compatibility, as facial similarity is just one factor in a complex matchmaking process. Aim for a balanced perspective that highlights potential positives while noting areas that might require further consideration.
 
-        Begin your analysis immediately without any disclaimers about image analysis or individual identification. Focus solely on the compatibility assessment between John Doe and Jane Doe based on their facial features and the provided similarity score.
+        Begin your analysis immediately without any disclaimers about image analysis or individual identification. Focus solely on the compatibility assessment based on the facial features and the provided similarity score.
+
+        Format your response in markdown, using appropriate headers, bullet points, or numbered lists for clarity and readability.
         """
 
         # Send the prompt to Claude
@@ -112,26 +117,25 @@ async def describe_face_comparison(image_file_a, image_file_b):
                             "source": {
                                 "type": "base64",
                                 "media_type": "image/jpeg",
-                "data": base64_image_a
-            }
-        },
-        {
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/jpeg",
-                "data": base64_image_b
-            }
-        }
-    ]
-}
+                                "data": base64_image_a
+                            }
+                        },
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": base64_image_b
+                            }
+                        }
+                    ]
+                }
             ]
         )
         description = response.content[0].text
         return {"similarity_score": similarity_score, "analysis": description}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
-
 @app.post("/faces")
 async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
     try:
