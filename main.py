@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import numpy as np
 from PIL import Image
-from anthropic import Anthropic, ImageContent
+from anthropic import Anthropic
 import os
 from base64 import b64encode
 import io
