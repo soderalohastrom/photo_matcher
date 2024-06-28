@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
-import face_recognition
+from deepface import DeepFace
 import numpy as np
 from PIL import Image
 import anthropic
@@ -24,25 +24,17 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = anthropic.Anthropic(api_key=api_key)
 
-def load_and_encode_face(image_file):
-    try:
-        image = face_recognition.load_image_file(image_file)
-        face_encodings = face_recognition.face_encodings(image)
-        if face_encodings:
-            return face_encodings[0]
-        else:
-            raise ValueError(f"No face found in the image")
-    except Exception as e:
-        raise ValueError(f"Error processing image: {str(e)}")
-
 def compare_faces(image_file_a, image_file_b):
     try:
-        encoding_a = load_and_encode_face(image_file_a)
-        encoding_b = load_and_encode_face(image_file_b)
-
-        distance = np.linalg.norm(encoding_a - encoding_b)
-        similarity_score = 1 - (distance / np.sqrt(len(encoding_a)))
-
+        img_a = Image.open(image_file_a).convert('RGB')
+        img_b = Image.open(image_file_b).convert('RGB')
+        
+        result = DeepFace.verify(img1_path=np.array(img_a), 
+                                 img2_path=np.array(img_b), 
+                                 model_name='VGG-Face', 
+                                 enforce_detection=False)
+        
+        similarity_score = 1 - result['distance']
         return max(0, min(1, similarity_score))
     except Exception as e:
         print(f"Error in compare_faces: {e}")
@@ -144,4 +136,4 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=9000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
