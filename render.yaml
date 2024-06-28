@@ -11,3 +11,9 @@ services:
       - libopenblas-dev
       - liblapack-dev
       - libjpeg-dev
+      - cmake
+      - build-essential
+      - libx11-dev
+      - libatlas-base-dev
+      - libgtk-3-dev
+      - libboost-python-dev
