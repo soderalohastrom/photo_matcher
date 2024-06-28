@@ -8,7 +8,6 @@ use GuzzleHttp\Exception\GuzzleException;
 function performFaceComparison() {
     // Hard-coded variables for testing
     $apiEndpoint = 'https://photo-matcher.onrender.com/face-comparison';
-    $apiKey = 'your-api-key-here';
     $image1Path = 'photos/man.jpg';
     $image2Path = 'photos/lady.jpg';
 
