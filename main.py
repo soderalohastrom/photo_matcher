@@ -6,12 +6,11 @@ from anthropic import Anthropic
 import os
 from base64 import b64encode
 import io
-import uvicorn
 import cv2
 from skimage.metrics import structural_similarity as ssim
+from dotenv import load_dotenv
 
 # Load environment variables
-from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
@@ -22,6 +21,8 @@ api_key = os.getenv('ANTHROPIC_API_KEY')
 if not api_key:
     raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
 
+# Create an instance of the Anthropic client
+client = Anthropic(api_key=api_key)
 
 def load_image_file(file):
     image = Image.open(file).convert('RGB')
@@ -61,24 +62,6 @@ def compare_faces(image_file_a, image_file_b):
 
 def encode_image(image_file):
     return b64encode(image_file.read()).decode('utf-8')
-
-# Create an instance of the Anthropic client
-client = Anthropic(api_key=api_key)
-
-from fastapi import FastAPI, File, UploadFile, HTTPException
-
-app = FastAPI()
-
-@app.post("/faces")
-async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
-    try:
-        # Your existing code here
-        result = await describe_face_comparison(image1.file, image2.file)
-        return JSONResponse(content=result)
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 async def describe_face_comparison(image_file_a, image_file_b):
     similarity_score = compare_faces(image_file_a, image_file_b)
@@ -129,22 +112,36 @@ async def describe_face_comparison(image_file_a, image_file_b):
                             "source": {
                                 "type": "base64",
                                 "media_type": "image/jpeg",
-                                "data": base64_image_a
-                            }
-                        },
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/jpeg",
-                                "data": base64_image_b
-                            }
-                        }
-                    ]
-                }
+                "data": base64_image_a
+            }
+        },
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": base64_image_b
+            }
+        }
+    ]
+}
             ]
         )
         description = response.content[0].text
         return {"similarity_score": similarity_score, "analysis": description}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
+
+@app.post("/faces")
+async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
+    try:
+        result = await describe_face_comparison(image1.file, image2.file)
+        return JSONResponse(content=result)
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
