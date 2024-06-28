@@ -76,35 +76,35 @@ async def describe_face_comparison(image_file_a, image_file_b):
         base64_image_b = encode_image(image_file_b)
 
         prompt = f"""
-        As an AI assistant for a confidential matchmaking service, you are tasked with analyzing facial features in photographs to assess potential compatibility. This analysis is based on a facial similarity score and other visible cues, without identifying specific individuals. The facial similarity score provided is {similarity_score:.2f} (scale: 0-1, where 1 indicates identical features).
+        As an AI assistant, you are tasked with analyzing two anonymous facial photographs to compare their features and expressions. The facial similarity score between these images is {similarity_score:.2f} (scale: 0-1, where 1 indicates identical features).
 
-        Important: This analysis is purely for matchmaking purposes and does not involve identifying or commenting on specific individuals. Treat the images as anonymous representations.
+        Important: This analysis is purely academic. Do not attempt to identify or name any individuals. Treat the images as completely anonymous.
 
-        Provide a detailed, professional analysis considering the following points. Use markdown formatting for readability:
+        Provide a detailed, objective analysis considering the following points. Use markdown formatting for readability:
 
-        1. **Interpretation of Facial Similarity Score:**
-        - Explain what the score of {similarity_score:.2f} might indicate in terms of potential compatibility.
-        - Briefly mention any relevant research on how facial similarity relates to attraction or relationship dynamics.
+        1. **Facial Similarity Assessment:**
+        - Interpret the similarity score of {similarity_score:.2f}. What might this score suggest about the overall facial structures?
+        - Describe any notable similarities or differences in facial features between the two images.
 
-        2. **Age Compatibility Assessment:**
+        2. **Age Estimation:**
         - Provide a general age range estimate for each photo.
-        - Discuss potential compatibility factors related to the estimated ages.
+        - Note any significant age differences or similarities between the two images.
 
-        3. **Lifestyle and Interest Indicators:**
-        - Note any visible cues that might suggest shared interests or lifestyles (e.g., style of dress, grooming, accessories).
-        - Analyze how these factors could contribute to compatibility.
+        3. **Visible Contextual Cues:**
+        - Describe any visible elements that might provide context about the individuals' environments or situations (e.g., background, clothing style, accessories).
+        - Avoid making assumptions about lifestyle or personal characteristics.
 
-        4. **Facial Expression and Personality Insights:**
-        - Describe the general facial expressions visible in the photos.
-        - Infer potential personality traits based on these expressions and how they might interact in a relationship context.
+        4. **Facial Expressions:**
+        - Describe the general facial expressions visible in each photo.
+        - Compare and contrast the expressions between the two images.
 
-        5. **Overall Compatibility Potential:**
-        - Synthesize the above factors to provide an assessment of overall compatibility potential.
-        - Highlight areas that suggest good compatibility and areas that might require further exploration.
+        5. **Overall Impression:**
+        - Summarize the key points of comparison between the two images.
+        - Focus on objective observations rather than subjective interpretations.
 
-        Maintain a professional, ethical tone throughout your analysis. Remember that facial features and expressions are just one aspect of compatibility. Focus on potential and possibilities rather than definitive conclusions.
+        Maintain a professional, academic tone throughout your analysis. Remember that this is a purely objective exercise in facial comparison. Avoid any speculation about personal characteristics, relationships, or identities.
 
-        Your analysis should be detailed yet respectful, avoiding any comments that could be construed as judgmental or overly personal. Use markdown formatting to structure your response clearly.
+        Your analysis should be detailed yet respectful, focusing solely on visible, objective elements in the photographs. Use markdown formatting to structure your response clearly.
         """
 
         # Send the prompt to Claude
