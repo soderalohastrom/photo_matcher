@@ -1,13 +1,19 @@
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
 import face_recognition
 import numpy as np
 from PIL import Image
 import anthropic
 import os
 from base64 import b64encode
+import io
+import uvicorn
 
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
+
+app = FastAPI()
 
 # Access the environment variable
 api_key = os.getenv('ANTHROPIC_API_KEY')
@@ -18,21 +24,21 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = anthropic.Anthropic(api_key=api_key)
 
-def load_and_encode_face(image_path):
+def load_and_encode_face(image_file):
     try:
-        image = face_recognition.load_image_file(image_path)
+        image = face_recognition.load_image_file(image_file)
         face_encodings = face_recognition.face_encodings(image)
         if face_encodings:
             return face_encodings[0]
         else:
-            raise ValueError(f"No face found in the image: {image_path}")
+            raise ValueError(f"No face found in the image")
     except Exception as e:
-        raise ValueError(f"Error processing image {image_path}: {str(e)}")
+        raise ValueError(f"Error processing image: {str(e)}")
 
-def compare_faces(image_path_a, image_path_b):
+def compare_faces(image_file_a, image_file_b):
     try:
-        encoding_a = load_and_encode_face(image_path_a)
-        encoding_b = load_and_encode_face(image_path_b)
+        encoding_a = load_and_encode_face(image_file_a)
+        encoding_b = load_and_encode_face(image_file_b)
 
         distance = np.linalg.norm(encoding_a - encoding_b)
         similarity_score = 1 - (distance / np.sqrt(len(encoding_a)))
@@ -42,23 +48,23 @@ def compare_faces(image_path_a, image_path_b):
         print(f"Error in compare_faces: {e}")
         return None
 
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return b64encode(image_file.read()).decode('utf-8')
+def encode_image(image_file):
+    return b64encode(image_file.read()).decode('utf-8')
 
-def describe_face_comparison(image_path_a, image_path_b):
-    similarity_score = compare_faces(image_path_a, image_path_b)
+async def describe_face_comparison(image_file_a, image_file_b):
+    similarity_score = compare_faces(image_file_a, image_file_b)
 
     if similarity_score is None:
-        print("Error: Could not compare faces.")
-        return
-
-    print(f"Similarity Score: {similarity_score:.2f}")
+        raise HTTPException(status_code=400, detail="Error: Could not compare faces.")
 
     try:
+        # Reset file pointers to the beginning
+        image_file_a.seek(0)
+        image_file_b.seek(0)
+        
         # Encode images
-        base64_image_a = encode_image(image_path_a)
-        base64_image_b = encode_image(image_path_b)
+        base64_image_a = encode_image(image_file_a)
+        base64_image_b = encode_image(image_file_b)
 
         # Construct the prompt with images
         prompt = f"""
@@ -119,12 +125,23 @@ def describe_face_comparison(image_path_a, image_path_b):
             ]
         )
         description = response.content[0].text
-        print(f"Claude's Matchmaking Analysis:\n{description}")
+        return {"similarity_score": similarity_score, "analysis": description}
     except Exception as e:
-        print(f"Error generating description: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
+
+@app.post("/faces")
+async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
+    try:
+        # Create temporary in-memory file-like objects
+        image1_file = io.BytesIO(await image1.read())
+        image2_file = io.BytesIO(await image2.read())
+        
+        result = await describe_face_comparison(image1_file, image2_file)
+        return JSONResponse(content=result)
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    image_path_a = "photos/man.jpg"
-    image_path_b = "photos/lady.jpg"
-
-    describe_face_comparison(image_path_a, image_path_b)
+    uvicorn.run(app, host="0.0.0.0", port=9000)

@@ -7,7 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 // Function to perform face comparison
 function performFaceComparison() {
     // Hard-coded variables for testing
-    $apiEndpoint = 'http://your-fastapi-server.com/face-comparison';
+    $apiEndpoint = 'https://photo-matcher.onrender.com/face-comparison';
     $apiKey = 'your-api-key-here';
     $image1Path = 'photos/man.jpg';
     $image2Path = 'photos/lady.jpg';
