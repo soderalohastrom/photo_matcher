@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import numpy as np
 from PIL import Image
-import anthropic
+from anthropic import Anthropic, ImageContent
 import os
 from base64 import b64encode
 import io
@@ -47,7 +47,7 @@ def compare_faces(image_file_a, image_file_b):
         face_b = detect_face(img_b)
         
         if face_a is None or face_b is None:
-            return None
+            return 0.0  # Return 0 similarity if faces can't be detected
         
         face_a_gray = cv2.cvtColor(face_a, cv2.COLOR_RGB2GRAY)
         face_b_gray = cv2.cvtColor(face_b, cv2.COLOR_RGB2GRAY)
@@ -59,16 +59,14 @@ def compare_faces(image_file_a, image_file_b):
         return max(0, min(1, similarity_score))
     except Exception as e:
         print(f"Error in compare_faces: {e}")
-        return None
+        return 0.0  # Return 0 similarity on error
 
 def encode_image(image_file):
     return b64encode(image_file.read()).decode('utf-8')
 
+
 async def describe_face_comparison(image_file_a, image_file_b):
     similarity_score = compare_faces(image_file_a, image_file_b)
-
-    if similarity_score is None:
-        raise HTTPException(status_code=400, detail="Error: Could not compare faces.")
 
     try:
         # Reset file pointers to the beginning
@@ -93,15 +91,10 @@ async def describe_face_comparison(image_file_a, image_file_b):
         4. Age and Lifestyle Indicators: Estimate approximate ages for John and Jane, and note any visible lifestyle indicators (e.g., grooming, style choices visible in the images).
         5. Potential Compatibility Insights: Based on facial similarity research and the given score, suggest potential areas of compatibility or challenges for John and Jane. Remember, while similarity often indicates compatibility, unique combinations can also create intriguing matches.
         6. Aesthetic Appeal as a Couple: Comment on how visually harmonious John and Jane might appear together.
+
         Provide your analysis in a professional, sensitive manner. Avoid making absolute statements about compatibility, as facial similarity is just one factor in a complex matchmaking process. Aim for a balanced perspective that highlights potential positives while noting areas that might require further consideration.
 
         Begin your analysis immediately without any disclaimers about image analysis or individual identification. Focus solely on the compatibility assessment between John Doe and Jane Doe based on their facial features and the provided similarity score.
-
-        [Image 1 - John Doe]
-        <image_1>
-        
-        [Image 2 - Jane Doe]
-        <image_2>
         """
 
         # Send the prompt to Claude
@@ -116,22 +109,22 @@ async def describe_face_comparison(image_file_a, image_file_b):
                             "type": "text",
                             "text": prompt
                         },
-                        {
-                            "type": "image",
-                            "source": {
+                        ImageContent(
+                            type="image",
+                            source={
                                 "type": "base64",
                                 "media_type": "image/jpeg",
                                 "data": base64_image_a
                             }
-                        },
-                        {
-                            "type": "image",
-                            "source": {
+                        ),
+                        ImageContent(
+                            type="image",
+                            source={
                                 "type": "base64",
                                 "media_type": "image/jpeg",
                                 "data": base64_image_b
                             }
-                        }
+                        )
                     ]
                 }
             ]
@@ -140,7 +133,7 @@ async def describe_face_comparison(image_file_a, image_file_b):
         return {"similarity_score": similarity_score, "analysis": description}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
-
+    
 @app.post("/faces")
 async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
     try:
@@ -156,4 +149,4 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=9000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
