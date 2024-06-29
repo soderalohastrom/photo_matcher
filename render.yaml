@@ -8,12 +8,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.9.0
     packages:
+      - build-essential
+      - cmake
       - libopenblas-dev
       - liblapack-dev
-      - libjpeg-dev
-      - cmake
-      - build-essential
-      - libx11-dev
-      - libatlas-base-dev
-      - libgtk-3-dev
-      - libboost-python-dev
