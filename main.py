@@ -6,8 +6,7 @@ from anthropic import Anthropic
 import os
 from base64 import b64encode
 import io
-import cv2
-from skimage.metrics import structural_similarity as ssim
+from deepface import DeepFace
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -24,38 +23,15 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = Anthropic(api_key=api_key)
 
-def load_image_file(file):
-    image = Image.open(file).convert('RGB')
-    return np.array(image)
-
-def detect_face(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-    if len(faces) == 0:
-        return None
-    (x, y, w, h) = faces[0]
-    return image[y:y+h, x:x+w]
-
 def compare_faces(image_file_a, image_file_b):
     try:
-        img_a = load_image_file(image_file_a)
-        img_b = load_image_file(image_file_b)
+        # DeepFace.verify returns a dictionary with 'verified' and 'distance' keys
+        result = DeepFace.verify(image_file_a, image_file_b, model_name="VGG-Face")
         
-        face_a = detect_face(img_a)
-        face_b = detect_face(img_b)
+        # Convert distance to similarity score (1 - normalized distance)
+        similarity_score = 1 - (result['distance'] / 2.5)  # 2.5 is a typical threshold for VGG-Face
         
-        if face_a is None or face_b is None:
-            return 0.0  # Return 0 similarity if faces can't be detected
-        
-        face_a_gray = cv2.cvtColor(face_a, cv2.COLOR_RGB2GRAY)
-        face_b_gray = cv2.cvtColor(face_b, cv2.COLOR_RGB2GRAY)
-        
-        face_a_resized = cv2.resize(face_a_gray, (100, 100))
-        face_b_resized = cv2.resize(face_b_gray, (100, 100))
-        
-        similarity_score = ssim(face_a_resized, face_b_resized)
-        return max(0, min(1, similarity_score))
+        return float(np.clip(similarity_score, 0, 1))  # Ensure score is between 0 and 1
     except Exception as e:
         print(f"Error in compare_faces: {e}")
         return 0.0  # Return 0 similarity on error
@@ -143,6 +119,7 @@ async def describe_face_comparison(image_file_a, image_file_b):
         return {"similarity_score": similarity_score, "analysis": description}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
+
 @app.post("/faces")
 async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = File(...)):
     try:
@@ -155,4 +132,4 @@ async def face_comparison(image1: UploadFile = File(...), image2: UploadFile = F
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9000)
