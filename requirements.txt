@@ -7,3 +7,5 @@ anthropic==0.30.0
 python-dotenv==1.0.0
 deepface==0.0.79
 opencv-python-headless==4.5.5.64
+tensorflow==2.10.0
+keras==2.10.0

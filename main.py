@@ -6,7 +6,6 @@ from anthropic import Anthropic
 import os
 from base64 import b64encode
 import io
-from deepface import DeepFace
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -23,18 +22,21 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = Anthropic(api_key=api_key)
 
-def compare_faces(image_file_a, image_file_b):
-    try:
-        # DeepFace.verify returns a dictionary with 'verified' and 'distance' keys
-        result = DeepFace.verify(image_file_a, image_file_b, model_name="VGG-Face")
-        
-        # Convert distance to similarity score (1 - normalized distance)
-        similarity_score = 1 - (result['distance'] / 2.5)  # 2.5 is a typical threshold for VGG-Face
-        
-        return float(np.clip(similarity_score, 0, 1))  # Ensure score is between 0 and 1
-    except Exception as e:
-        print(f"Error in compare_faces: {e}")
-        return 0.0  # Return 0 similarity on error
+try:
+    from deepface import DeepFace
+    
+    def compare_faces(image_file_a, image_file_b):
+        try:
+            result = DeepFace.verify(image_file_a, image_file_b, model_name="VGG-Face")
+            similarity_score = 1 - (result['distance'] / 2.5)
+            return float(np.clip(similarity_score, 0, 1))
+        except Exception as e:
+            print(f"Error in compare_faces: {e}")
+            return 0.0
+except ImportError:
+    print("Warning: DeepFace could not be imported. Using dummy comparison function.")
+    def compare_faces(image_file_a, image_file_b):
+        return 0.5  # Return a dummy similarity score
 
 def encode_image(image_file):
     return b64encode(image_file.read()).decode('utf-8')
