@@ -7,6 +7,7 @@ import os
 from base64 import b64encode
 import io
 from dotenv import load_dotenv
+import face_recognition_lite as frl
 
 # Load environment variables
 load_dotenv()
@@ -22,21 +23,33 @@ if not api_key:
 # Create an instance of the Anthropic client
 client = Anthropic(api_key=api_key)
 
-try:
-    from deepface import DeepFace
-    
-    def compare_faces(image_file_a, image_file_b):
-        try:
-            result = DeepFace.verify(image_file_a, image_file_b, model_name="VGG-Face")
-            similarity_score = 1 - (result['distance'] / 2.5)
-            return float(np.clip(similarity_score, 0, 1))
-        except Exception as e:
-            print(f"Error in compare_faces: {e}")
-            return 0.0
-except ImportError:
-    print("Warning: DeepFace could not be imported. Using dummy comparison function.")
-    def compare_faces(image_file_a, image_file_b):
-        return 0.5  # Return a dummy similarity score
+def compare_faces(image_file_a, image_file_b):
+    try:
+        # Load images
+        img_a = Image.open(image_file_a).convert('RGB')
+        img_b = Image.open(image_file_b).convert('RGB')
+        
+        # Convert to numpy arrays
+        img_a_np = np.array(img_a)
+        img_b_np = np.array(img_b)
+        
+        # Get face encodings
+        face_encodings_a = frl.face_encodings(img_a_np)
+        face_encodings_b = frl.face_encodings(img_b_np)
+        
+        if not face_encodings_a or not face_encodings_b:
+            return 0.0  # Return 0 similarity if faces can't be detected
+        
+        # Compare faces
+        face_distances = frl.face_distance(face_encodings_a, face_encodings_b[0])
+        
+        # Convert distance to similarity score (1 - distance)
+        similarity_score = 1 - face_distances[0]
+        
+        return float(similarity_score)
+    except Exception as e:
+        print(f"Error in compare_faces: {e}")
+        return 0.0  # Return 0 similarity on error
 
 def encode_image(image_file):
     return b64encode(image_file.read()).decode('utf-8')
